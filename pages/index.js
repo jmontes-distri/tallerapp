@@ -1,12 +1,8 @@
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/router'
+import { useState } from 'react'
 import axios from 'axios'
 import toast, { Toaster } from 'react-hot-toast'
 
 export default function Home() {
-  const router = useRouter()
-  const { taller_id } = router.query
-  const [servicios, setServicios] = useState([])
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     cliente_nombre: '',
@@ -18,21 +14,11 @@ export default function Home() {
     hora_preferida: '',
   })
 
-  useEffect(() => {
-    if (taller_id) {
-      fetchServicios()
-    }
-  }, [taller_id])
-
-  const fetchServicios = async () => {
-    try {
-      const response = await axios.get(`/api/servicios?taller_id=${taller_id}`)
-      setServicios(response.data || [])
-    } catch (error) {
-      console.error('Error cargando servicios:', error)
-      setServicios([])
-    }
-  }
+  const servicios = [
+    { id: '1', nombre: 'Cambio de aceite - $2500' },
+    { id: '2', nombre: 'Revisión general - $5000' },
+    { id: '3', nombre: 'Reparación de frenos - $8000' },
+  ]
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -46,20 +32,19 @@ export default function Home() {
     e.preventDefault()
     
     if (!formData.cliente_nombre || !formData.cliente_email || !formData.cliente_telefono || !formData.descripcion) {
-      toast.error('Completa todos los campos requeridos')
+      toast.error('Completa todos los campos')
       return
     }
 
     setLoading(true)
 
     try {
-      const response = await axios.post(`/api/solicitudes?taller_id=${taller_id}`, {
+      const response = await axios.post(`/api/solicitudes?taller_id=demo-123`, {
         ...formData,
-        taller_id,
-        servicio_id: formData.servicio_id || null,
+        taller_id: 'demo-123',
       })
 
-      toast.success('¡Solicitud enviada! Pronto te contactaremos con una cotización.')
+      toast.success('¡Solicitud enviada exitosamente!')
       setFormData({
         cliente_nombre: '',
         cliente_email: '',
@@ -69,27 +54,11 @@ export default function Home() {
         fecha_preferida: '',
         hora_preferida: '',
       })
-
-      // Guardar ID para consultar más tarde
-      localStorage.setItem('ultima_solicitud', response.data.id)
     } catch (error) {
-      toast.error('Error al enviar solicitud. Intenta nuevamente.')
-      console.error(error)
+      toast.error('Error al enviar solicitud')
     } finally {
       setLoading(false)
     }
-  }
-
-  // Mostrar cargando mientras obtiene taller_id
-  if (!taller_id) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-teal-50 to-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando...</p>
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -99,18 +68,17 @@ export default function Home() {
       <div className="container mx-auto px-4 py-12 max-w-2xl">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Solicita tu turno</h1>
-          <p className="text-gray-600">Completa el formulario y recibirás una cotización personalizada</p>
+          <p className="text-gray-600">Completa el formulario y recibirás una cotización</p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-8 space-y-6">
-          {/* Datos personales */}
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-gray-900 border-b-2 border-teal-200 pb-2">
               Tus datos
             </h2>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre completo *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
               <input
                 type="text"
                 name="cliente_nombre"
@@ -123,7 +91,7 @@ export default function Home() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
               <input
                 type="email"
                 name="cliente_email"
@@ -136,7 +104,7 @@ export default function Home() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
               <input
                 type="tel"
                 name="cliente_telefono"
@@ -149,36 +117,32 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Detalles del servicio */}
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-gray-900 border-b-2 border-teal-200 pb-2">
-              Sobre tu solicitud
+              Tu solicitud
             </h2>
 
-            {servicios.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tipo de servicio (opcional)
-                </label>
-                <select
-                  name="servicio_id"
-                  value={formData.servicio_id}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                >
-                  <option value="">Selecciona un servicio...</option>
-                  {servicios.map(servicio => (
-                    <option key={servicio.id} value={servicio.id}>
-                      {servicio.nombre}
-                      {servicio.precio_estimado && ` - $${servicio.precio_estimado}`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tipo de servicio
+              </label>
+              <select
+                name="servicio_id"
+                value={formData.servicio_id}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              >
+                <option value="">Selecciona un servicio</option>
+                {servicios.map(servicio => (
+                  <option key={servicio.id} value={servicio.id}>
+                    {servicio.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Descripción del trabajo *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
               <textarea
                 name="descripcion"
                 value={formData.descripcion}
@@ -193,7 +157,7 @@ export default function Home() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Fecha preferida (opcional)
+                  Fecha preferida
                 </label>
                 <input
                   type="date"
@@ -206,7 +170,7 @@ export default function Home() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Hora preferida (opcional)
+                  Hora preferida
                 </label>
                 <input
                   type="time"
@@ -227,12 +191,6 @@ export default function Home() {
             {loading ? 'Enviando...' : 'Enviar solicitud'}
           </button>
         </form>
-
-        <div className="mt-8 p-6 bg-blue-50 rounded-lg border border-blue-200">
-          <p className="text-sm text-gray-600">
-            <strong>ℹ️ Próximos pasos:</strong> Una vez enviada tu solicitud, el taller revisará tu demanda y te enviará una cotización a tu email. Podrás confirmar el turno y realizar el pago desde aquí.
-          </p>
-        </div>
       </div>
     </div>
   )
